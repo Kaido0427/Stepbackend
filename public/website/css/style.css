@@ -1,0 +1,38 @@
+.platform {
+  position: relative;
+  transition: right 0.3s;
+}
+
+.gallery {
+  width: 1230px;
+}
+
+.card {
+  min-width: 390px;
+}
+
+.arrow {
+  top: 30%
+}
+
+#parks {
+  scroll-behavior: smooth;
+}
+
+.alert-danger {
+  color: red;
+}
+
+.alert {
+  position: relative;
+  margin-bottom: 1rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+}
+
+.alert-success {
+  color: #fff;
+  border-color: #4fd69c;
+  background-color: #4fd69c;
+}
