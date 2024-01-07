@@ -15,6 +15,45 @@
             </div> --}}
         </form>
         <!-- User -->
+        <!-- Menu déroulant -->
+        <ul class="navbar-nav mr-auto">
+
+            <li class="nav-item dropdown">
+
+                <a class="nav-link dropdown-toggle" href="#" id="currencyDropdown" role="button" data-toggle="dropdown">
+                    Devise
+                </a>
+
+                <div class="dropdown-menu">
+
+                    <!-- Formulaire -->
+                    <form method="POST" action="{{ route('convert') }}">
+                        @csrf
+
+                        <div class="dropdown-item">
+                            <label>Convertir de</label>
+                            <select name="from" class="form-control">
+                                <option value="EUR">EUR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+
+                        <div class="dropdown-item">
+                            <label>Convertir vers</label>
+                            <select name="to" class="form-control">
+                                <option value="EUR">EUR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="dropdown-item">Convertir</button>
+                    </form>
+
+                </div>
+
+            </li>
+
+        </ul>
         <ul class="navbar-nav align-items-center d-none d-md-flex">
             @php
             $language=App\Language::get();
@@ -30,7 +69,7 @@
                             <span class="mb-0 text-sm  font-weight-bold text-capitalize">{{app()->getLocale()}}</span>
                         </div>
                         @else
-                        <span >
+                        <span>
                             <img alt="Image placeholder" src="{{ asset('argon') }}/img/theme/english.png" class="rounded-circle" height="50px" width="50px" style="object-fit:cover">
                         </span>
                         <div class="media-body ml-2 d-none d-lg-block">
@@ -45,7 +84,7 @@
                     </div>
                     @foreach ($language as $lng )
                     <a href="{{ url('selectlanguage',$lng->id) }}" class="dropdown-item">
-                        <span><img src="{{ asset('upload')}}/{{$lng['image'] }}" class="rounded-circle"  height="50px" width="50px" style="object-fit:cover"></span>
+                        <span><img src="{{ asset('upload')}}/{{$lng['image'] }}" class="rounded-circle" height="50px" width="50px" style="object-fit:cover"></span>
                         <span class="text-capitalize">{{$lng['name'] }}</span>
                     </a>
                     @endforeach
@@ -93,6 +132,9 @@
                 </div>
             </li>
         </ul>
-        
+
     </div>
+
 </nav>
+
+

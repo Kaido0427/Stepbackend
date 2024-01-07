@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\currencyConvertController;
 use App\Http\Controllers\Api\GuardApiController;
 use App\Http\Controllers\Api\OwnerApiController;
 use App\Http\Controllers\Api\UserApiController;
@@ -28,7 +29,7 @@ Route::group(['prefix' => 'owner'], function () {
         Route::get('profile', function (Request $request) {
             return $request->user();
         });
-   
+
 
         Route::post('images', [OwnerApiController::class, 'storeParkingImage']);
         Route::get('images/{id}/space', [OwnerApiController::class, 'parkingImages']);
@@ -51,6 +52,8 @@ Route::group(['prefix' => 'owner'], function () {
         Route::get('subscription', [OwnerApiController::class, 'getSubscription']);
         Route::get('subscription_history', [OwnerApiController::class, 'subscriptionHistory']);
         Route::post('purchase_subscription', [OwnerApiController::class, 'purchaseSubscription']);
+        // API route pour la conversion de devise
+        Route::post('/convert', [currencyConvertController::class, 'convertAll']);
     });
 
     Route::get('setting', [OwnerApiController::class, 'allSetting']);
@@ -100,7 +103,7 @@ Route::group(['prefix' => 'guard'], function () {
     });
     Route::get('setting', [GuardApiController::class, 'allSetting']);
 });*/
- 
+
 Route::group(['prefix' => 'user'], function () {
     Route::group(['middleware' => ['auth:userApi']], function () {
         Route::resource('vehicle', 'UserVehicleController');
@@ -117,7 +120,6 @@ Route::group(['prefix' => 'user'], function () {
 
         Route::get('success-transaction', [UserApiController::class, 'successTransaction'])->name('successTransaction');
         Route::get('cancel-transaction', [UserApiController::class, 'cancelTransaction'])->name('cancelTransaction');
-   
     });
     Route::get('setting', [UserApiController::class, 'allSetting']);
     Route::post('forgot', [UserApiController::class, 'forgotPassword']);
@@ -131,6 +133,8 @@ Route::group(['prefix' => 'user'], function () {
     Route::post('space/{id}', [UserApiController::class, 'getNearByParkingSingle']);
     Route::post('space/{id}/zone', [UserApiController::class, 'getParkingZone']);
     Route::post('login', [UserApiController::class, 'login']);
+    // API route pour la conversion de devise
+    Route::post('/convert', [currencyConvertController::class, 'convertAll']);
 
 
     //  // unuse

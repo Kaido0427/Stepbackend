@@ -14,6 +14,7 @@
 use App\AdminSetting;
 use App\Http\Controllers\AdminSettingController;
 use App\Http\Controllers\AppUsersController;
+use App\Http\Controllers\currencyController;
 use App\Http\Controllers\LanguageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Owner\OwnerController;
@@ -105,6 +106,7 @@ Route::middleware(['XssSanitizer'])->group(function () {
         Route::get('/transaction', [AdminSettingController::class, 'transaction']);
         Route::post('/transaction/custom', [AdminSettingController::class, 'transactionCustom']);
         Route::post('/transactionAll', [AdminSettingController::class, 'transactionAll']);
+        Route::POST('/convert', [AdminSettingController::class, 'convertAll'])->name('convert');
     });
     Route::get('selectlanguage/{id}', [LanguageController::class, 'SelectLanguage']);
     Route::get('sampleDownloadFile', [LanguageController::class, 'sampleDownload']);

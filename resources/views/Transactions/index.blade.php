@@ -12,7 +12,7 @@ array(
 'text'=>'Bilan'
 ])))
     <div class="container-fluid mt--7">
-        <div class="row">
+        <div class="row"> 
             <div class="col">
                 <div class="card shadow">
                     <div class="card-header border-0">

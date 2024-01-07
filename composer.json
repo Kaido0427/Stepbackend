@@ -10,6 +10,7 @@
     "require": {
         "php": "^8.0.26",
         "ext-gd": "*",
+        "amrshawky/laravel-currency": "^6.0",
         "berkayk/onesignal-laravel": "^1.0",
         "endroid/qr-code": "^4.8",
         "fideloper/proxy": "^4.0",
