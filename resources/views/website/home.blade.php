@@ -11,16 +11,20 @@
 
             <div class="xxxxl:pl-[300px] xxxxl:pr-[300px] xxxxl:pt-[116px] s:pl-[10px] s:pr-[10px] s:pt-[50px] xxl:pl-[100px] xxl:pr-[100px] xxxl:pr-[150px] xxxl:pl-[150px]">
 
-                
+
                 <div class="xxxxl:w-[658px] lg:w-[700px]">
                     <h1 class="font-poppins font-bold text-dark-gray xxxxl:text-6xl leading-[72px] mb-7 s:text-4xl sm:text-6xl">{{__('Sécurisez votre vélo avec notre service de Parking dédié.')}} </h1>
                     <p class="font-poppins font-medium text-[#8896AB] text-base leading-8 mb-10">{{__('Simplification de la mobilité urbaine. Nous sommes une entreprise de mobilité urbaine axée sur l\'avenir, dédiée à fournir des solutions intégrées. Grâce à nos services innovants, nous visons à transformer la manière dont les gens se déplacent et vivent les villes.')}}</p>
+                    <!--
                     @if(Auth::guard('appuser')->check())
+                   
                     <a href="{{asset('/parking_map_list')}}"><button class="w-48 h-14 bg-primary text-white font-poppins font-semibold text-lg rounded-[6px]">{{__('Reserver un Parking')}}</button></a>
-                    @else
+ @else
                     <button class="w-48 h-14 bg-primary text-white font-poppins font-semibold text-lg rounded-[6px]" data-modal-target="SignIn" data-modal-toggle="SignIn" type="button">{{__('Réserver un Parking.')}}</button>
                     @endif
+                    -->
                 </div>
+
             </div>
         </div>
 
@@ -33,7 +37,7 @@
             </div>
 
             {{-- Services --}}
-
+            <!--
             <div class="bg-light-blue md:rounded-[64px] xxxxl:pt-10 md:p-10 mb-10 s:p-4 s:pt-10 s:rounded-[30px]">
                 <h5 class="font-poppins font-bold text-dark-gray text-4xl mb-5">{{__('Services')}}</h5>
                 <div class="grid xl:grid-cols-4 gap-7 mb-7 s:grid-cols-1 l:grid-cols-2 md:grid-cols-3">
@@ -65,7 +69,7 @@
                         @endif
                         <div class="flex justify-between mb-5">
                             <h4 class="font-poppins font-semibold text-dark-gray text-xl">{{$item->name}}</h4>
-                            @if(isset($item->rate))                            
+                            @if(isset($item->rate))
                             <div class="flex gap-1 pl-2 pr-2 items-center w-[71px] h-[43px] bg-light-orange rounded-[8px]">
                                 <img src="{{asset('website/icon/star.svg')}}" alt="" class="w-5">
                                 <h6 class="font-poppins font-normal text-gray text-lg">{{$item->rate->star}}</h6>
@@ -185,21 +189,21 @@
                     </div>
                 </div> -->
 
-            </div>
-
-            {{-- We're available --}}
-
-            <div class="bg-[#EBF5FF] md:rounded-[64px] md:p-10 s:rounded-[30px] s:p-4">
-                <h5 class="font-poppins font-bold text-dark-gray text-4xl mb-5">{{__('Nous somme disponible')}}</h5>
-                <img src="{{asset('website/image/map.png')}}" alt="">
-            </div>
-
-
         </div>
+        
+        {{-- We're available --}}
+
+        <div class="bg-[#EBF5FF] md:rounded-[64px] md:p-10 s:rounded-[30px] s:p-4">
+            <h5 class="font-poppins font-bold text-dark-gray text-4xl mb-5">{{__('Nous somme disponible')}}</h5>
+            <img src="{{asset('website/image/map.png')}}" alt="">
+        </div>
+
 
     </div>
 
+</div>
 
 
 
-    @endsection
+
+@endsection

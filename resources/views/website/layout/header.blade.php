@@ -27,7 +27,7 @@
                         <div class="relative mx-auto text-gray-600 lg:hidden mb-5 ">
 
                             <form action="{{url('/search_query')}}">
-                             
+
                                 <input class="xxxxl:w-[290px] h-[46px] s:w-full border border-light-gray rounded-lg px-3 font-mulish font-medium text-base" type="search" name="search" placeholder="Search Parking">
                                 <button type="submit" class="absolute right-0 top-2 mr-4 bg-light-blue w-8 h-8 rounded">
                                     <img src="{{asset('website/icon/search.svg')}}" alt="" class="mx-auto">
@@ -35,27 +35,7 @@
 
                             </form>
                         </div>
-                        <ul class="flex lg:flex-row s:flex-col xxxxl:gap-8 s:gap-5 xl:gap-10 xxl:gap-12">
-                            <a href="{{url('/')}}">
-                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'home' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('Accueil')}}</li>
-                            </a>
-                            @if(Auth::guard('appuser')->check())
-                            <a href="{{url('/display_parking_booking')}}">
-                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'booking' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('Mes Réservations')}}</li>
-                            </a>
-                            @else
-                            <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'booking' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}} cursor-pointer" data-modal-target="SignIn" data-modal-toggle="SignIn" type="button">{{__('Mes Réservations')}}</li>
-
-                            @endif
-                            @if(!Auth::guard('appuser')->check())
-                            <a href="{{url('/about_us')}}">
-                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'aboutus' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('À Propos')}}</li>
-                            </a>
-                            <a href="{{url('/contact_us')}}">
-                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'contactus' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('Nous conctacter')}}</li>
-                            </a>
-                            @endif
-                        </ul>
+               
 
                         {{-- mobile menu --}}
                         @if(Auth::guard('appuser')->check())
@@ -68,9 +48,11 @@
                                 <!-- Dropdown menu -->
                                 <div id="dropdownNavbar1" class="z-10 hidden font-normal bg-white rounded-[16px] shadow w-[201px] !mt-6 !ml-5">
                                     <ul class="py-2 text-sm text-gray-700 dark:text-gray-400" aria-labelledby="dropdownLargeButton">
-                                        <li>
+                                        <!--   
+                                    <li>
                                             <a href="{{url('/display_parking_booking')}}" class="block px-4 py-2 font-poppins font-normal text-sm text-[#333F51] tracking-wide flex items-center gap-3"><img src="{{asset('website/icon/booking.svg')}}" alt="">{{__('Mes Réservations')}}</a>
                                         </li>
+-->
                                         <li>
                                             <a href="{{url('/user_vehicle')}}" class="block px-4 py-2 font-poppins font-normal text-sm text-[#333F51] tracking-wide flex items-center gap-3"><img src="{{asset('website/icon/car.svg')}}" alt="">{{__('Mes vélos')}}</a>
                                         </li>
@@ -88,17 +70,19 @@
                             </div>
                         </div>
                         @else
+                        <!--
                         <div class="flex gap-10 lg:hidden mt-5">
                             <button type="button" class="font-poppins font-medium text-[#556987] text-lg capitalize tracking-wide" data-modal-target="SignUp" data-modal-toggle="SignUp">{{__('Inscription')}}</button>
                             <button type="button" class="font-poppins font-medium text-white text-base capitalize w-[91px] h-[46px] bg-primary rounded-[6px]" data-modal-target="SignIn" data-modal-toggle="SignIn">{{__('Se connecter')}}</button>
                         </div>
+-->
                         @endif
                     </div>
                 </div>
-                <!-- component -->
+                <!-- component 
                 <div class="relative text-gray-600 s:hidden lg:block ">
                     <form action="{{ url('/search_query') }}">
-                       
+
                         <input class="xxxxl:w-[290px] h-[46px] s:w-full border border-light-gray rounded-lg px-3 font-mulish font-medium text-base" type="search" name="search" placeholder="Chercher un Parking">
                         <button type="submit" class="absolute right-0 top-2 mr-4 bg-light-blue w-8 h-8 rounded">
                             <img src="{{ asset('website/icon/search.svg') }}" alt="" class="mx-auto">
@@ -107,6 +91,30 @@
                     </form>
 
                 </div>
+                -->
+                <ul class="flex lg:flex-row s:flex-col xxxxl:gap-8 s:gap-5 xl:gap-10 xxl:gap-12">
+                            <a href="{{url('/')}}">
+                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'home' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('Accueil')}}</li>
+                            </a>
+                            <!--
+                            @if(Auth::guard('appuser')->check())
+                            <a href="{{url('/display_parking_booking')}}">
+                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'booking' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('Mes Réservations')}}</li>
+                            </a>
+                            @else
+                            <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'booking' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}} cursor-pointer" data-modal-target="SignIn" data-modal-toggle="SignIn" type="button">{{__('Mes Réservations')}}</li>
+
+                            @endif
+-->
+                            @if(!Auth::guard('appuser')->check())
+                            <a href="{{url('/about_us')}}">
+                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'aboutus' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('À Propos')}}</li>
+                            </a>
+                            <a href="{{url('/contact_us')}}">
+                                <li class="font-poppins font-medium text-lg capitalize {{ $activePage == 'contactus' ? 's:bg-primary s:text-white s:p-2 s:rounded-[5px] lg:text-primary lg:bg-white lg:p-0 lg:rounded-[0px]' : 'text-[#556987]'}}">{{__('Nous conctacter')}}</li>
+                            </a>
+                            @endif
+                        </ul>
 
                 @if(Auth::guard('appuser')->check())
 
@@ -138,15 +146,16 @@
                     </a>
                 </div>
                 @else
-
+<!--
                 <div class="flex s:hidden lg:block">
                     <button type="button" class="font-poppins font-medium text-[#556987] text-lg capitalize tracking-wide" data-modal-target="SignUp" data-modal-toggle="SignUp">{{__('Inscription')}}</button>
                     <button type="button" class="font-poppins font-medium text-white text-base capitalize w-[91px] h-[46px] bg-primary rounded-[6px] xxxxl:ml-10 xl:ml-5 xxl:ml-10" data-modal-target="SignIn" data-modal-toggle="SignIn">{{__('Connexion')}}</button>
                 </div>
+-->
                 @endif
 
                 {{-- Sign In --}}
-                <div id="SignIn" aria-hidden="true" tabindex="-1" class="fixed top-10 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto h-modal md:h-full" >
+                <div id="SignIn" aria-hidden="true" tabindex="-1" class="fixed top-10 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto h-modal md:h-full">
                     <div class="relative xxxxl:w-[450px] s:w-full h-full max-w-2xl md:h-auto">
                         <!-- Modal content -->
                         <div class="relative bg-white rounded-2xl shadow dark:bg-gray-700 p-8">
@@ -182,14 +191,14 @@
                                     <div class="flex justify-between items-center mb-3 s:flex-col l:flex-row">
                                         <div class="flex items-start mb-6">
                                             <div class="flex items-center h-5">
-                                                
+
                                             </div>
-                                            
+
                                         </div>
                                         <button type="button" class="btn1 font-poppins font-medium text-primary text-sm s:mb-5" data-modal-target="ForgotPassword" data-modal-toggle="ForgotPassword">{{__('Mot de psse oublié?')}}</button>
                                     </div>
                                     <button type="button" class="w-full bg-primary rounded-[6px] h-12 font-poppins font-medium text-base text-white tracking-wide mb-5" onclick="signIn()">{{__('Se connecter')}}</button>
-                                   
+
                                 </form>
                             </div>
                         </div>
@@ -266,7 +275,7 @@
                                 <button type="button" class="w-full bg-primary rounded-[6px] h-12 font-poppins font-medium text-base text-white tracking-wide" onclick="signUp()">{{__('Create un compte')}}
                                     <!-- <div id="process-circle" class="inline-block h-5 w-5 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] ml-2 mt-1 " role="status"></div> -->
                                 </button>
-                         
+
                             </form>
                         </div>
                     </div>

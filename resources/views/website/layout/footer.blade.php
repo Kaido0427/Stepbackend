@@ -3,7 +3,7 @@
          <a href="{{url('/')}}"><img src="{{asset('website/image/logo.png')}}" alt="" class="w-[60px] h-[60px]"></a>
          <div class="flex gap-5 l:flex-row s:flex-col s:mt-5 xxxxl:mt-0">
              <a href="https://play.google.com" target="_blank"><img src="{{asset('website/image/Googleplay.png')}}" alt=""></a>
-             <a href="https://www.apple.com/in/app-store" target="_blank"><img src="{{asset('website/image/Appstore.png')}}" alt=""></a>
+           <!--  <a href="https://www.apple.com/in/app-store" target="_blank"><img src="{{asset('website/image/Appstore.png')}}" alt=""></a>-->
          </div>
      </div>
      <div class="flex justify-between lg:items-center lg:flex-row s:flex-col">
