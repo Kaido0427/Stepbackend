@@ -15,7 +15,7 @@
                     <div class="card card-stats mb-4 mb-xl-0">
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-9" >
+                                <div class="col-9">
                                     <h5 class="card-title text-uppercase text-muted mb-0">{{__('Clients')}} </h5>
                                     <span class="h2 font-weight-bold mb-0">{{$data['user']}}</span>
                                 </div>
@@ -53,7 +53,7 @@
                         </div>
                     </div>
                 </div>
-            
+
                 <div class="col-xl-3 col-lg-6">
                     <div class="card card-stats mb-4 mb-xl-0">
                         <div class="card-body">
@@ -104,7 +104,8 @@
                             <div class="row">
                                 <div class="col-9">
                                     <h5 class="card-title text-uppercase text-muted mb-0">
-                                        {{__('Espaces verifiés')}}</h5>
+                                        {{__('Espaces verifiés')}}
+                                    </h5>
                                     <span class="h2 font-weight-bold mb-0">{{$data['verified_space']}}</span>
                                 </div>
                                 <div class="col-3">
@@ -204,7 +205,7 @@
                                 <td>
                                     {{$item['total_space']}}
                                 </td>
-                              
+
                                 <td>
                                     {{$item['total_booking']}}
                                 </td>
@@ -247,7 +248,7 @@
                                     {{$item['total_booking']}}
 
                                 </td>
-                               
+
                             </tr>
                             @endforeach
                         </tbody>
@@ -291,13 +292,12 @@
                                 {{$item['total_booking']}}
                             </td>
                             <td>
-                                ${{$item['total_earning']}}
+                                <span id="currencySymbol"></span>{{$item['total_earning']}}
                             </td>
                             <td>
 
                                 <div class="product-rating mb-1">
-                                    @for ($i = 1; $i <= 5; $i++) <i
-                                        class="fas fa-star {{$i<=$item['avg_rating'] ? 'active' : ''}}"></i>
+                                    @for ($i = 1; $i <= 5; $i++) <i class="fas fa-star {{$i<=$item['avg_rating'] ? 'active' : ''}}"></i>
                                         @endfor
                                 </div>
                             </td>
@@ -337,8 +337,7 @@
                                 {{$item['title']}}
                             </th>
                             <td>
-                                <img src="{{ asset('upload')}}/{{$item->image }}" class="rounded-circle" height="50"
-                                    width="50" style="object-fit: cover">
+                                <img src="{{ asset('upload')}}/{{$item->image }}" class="rounded-circle" height="50" width="50" style="object-fit: cover">
 
                             </td>
 
@@ -351,6 +350,75 @@
     </div>
 </div>
 </div>
+<script>
+    // Fonction pour inverser les devises sélectionnées
+    function convertCurrency(action) {
+        var fromSelect = document.getElementsByName('from')[0];
+        var toSelect = document.getElementsByName('to')[0];
+
+        if (action === 'invert') {
+            var temp = fromSelect.value;
+            fromSelect.value = toSelect.value;
+            toSelect.value = temp;
+        }
+
+        updateCurrencySymbol();
+    }
+
+    // Fonction pour mettre à jour le symbole de la devise
+    function updateCurrencySymbol() {
+        var fromSelect = document.getElementsByName('from')[0];
+        var toSelect = document.getElementsByName('to')[0];
+
+        var fromSymbol = getCurrencySymbol(fromSelect.value);
+        var toSymbol = getCurrencySymbol(toSelect.value);
+
+        // Stockez le symbole de la devise dans le stockage local
+        localStorage.setItem('fromSymbol', fromSymbol);
+        localStorage.setItem('toSymbol', toSymbol);
+
+        // Mettez à jour le contenu du span avec le symbole de la devise
+        document.getElementById('currencySymbol').innerText = fromSymbol;
+    }
+
+    // Fonction pour obtenir le symbole de la devise
+    function getCurrencySymbol(currencyCode) {
+        // Vous pouvez étendre cette fonction pour inclure d'autres codes de devise
+        if (currencyCode === 'EUR') {
+            return '€';
+        } else if (currencyCode === 'USD') {
+            return '$';
+        }
+
+        // Par défaut, retournez une chaîne vide
+        return '';
+    }
+
+    // Attachez l'événement onchange aux listes déroulantes pour mettre à jour le symbole de la devise
+    document.getElementsByName('from')[0].addEventListener('change', updateCurrencySymbol);
+    document.getElementsByName('to')[0].addEventListener('change', updateCurrencySymbol);
+
+    // Récupérez les symboles de devise du stockage local et définissez-les lors du chargement de la page
+    var fromSymbol = localStorage.getItem('fromSymbol');
+    var toSymbol = localStorage.getItem('toSymbol');
+    
+    // Si les symboles de devise ne sont pas dans le stockage local, utilisez les valeurs par défaut basées sur la sélection initiale
+    if (!fromSymbol || !toSymbol) {
+        fromSymbol = getCurrencySymbol(document.getElementsByName('from')[0].value);
+        toSymbol = getCurrencySymbol(document.getElementsByName('to')[0].value);
+        localStorage.setItem('fromSymbol', fromSymbol);
+        localStorage.setItem('toSymbol', toSymbol);
+    }
+
+    // Mettez à jour le contenu du span avec le symbole de la devise
+    document.getElementById('currencySymbol').innerText = fromSymbol;
+</script>
+
+
+
+
+
+
 @endsection
 
 @push('js')

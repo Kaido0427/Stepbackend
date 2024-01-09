@@ -17,19 +17,14 @@
         <!-- User -->
         <!-- Menu déroulant -->
         <ul class="navbar-nav mr-auto">
-
             <li class="nav-item dropdown">
-
                 <a class="nav-link dropdown-toggle" href="#" id="currencyDropdown" role="button" data-toggle="dropdown">
                     Devise
                 </a>
-
                 <div class="dropdown-menu">
-
                     <!-- Formulaire -->
                     <form method="POST" action="{{ route('convert') }}">
                         @csrf
-
                         <div class="dropdown-item">
                             <label>Convertir de</label>
                             <select name="from" class="form-control">
@@ -37,7 +32,6 @@
                                 <option value="USD">USD</option>
                             </select>
                         </div>
-
                         <div class="dropdown-item">
                             <label>Convertir vers</label>
                             <select name="to" class="form-control">
@@ -45,14 +39,10 @@
                                 <option value="USD">USD</option>
                             </select>
                         </div>
-
-                        <button type="submit" class="dropdown-item">Convertir</button>
+                        <button type="submit" onclick="convertCurrency('invert')" class="dropdown-item">Convertir</button>
                     </form>
-
                 </div>
-
             </li>
-
         </ul>
         <ul class="navbar-nav align-items-center d-none d-md-flex">
             @php
@@ -136,5 +126,66 @@
     </div>
 
 </nav>
+<script>
+    // Fonction pour inverser les devises sélectionnées
+    function convertCurrency(action) {
+        var fromSelect = document.getElementsByName('from')[0];
+        var toSelect = document.getElementsByName('to')[0];
 
+        if (action === 'invert') {
+            var temp = fromSelect.value;
+            fromSelect.value = toSelect.value;
+            toSelect.value = temp;
+        }
 
+        updateCurrencySymbol();
+    }
+
+    // Fonction pour mettre à jour le symbole de la devise
+    function updateCurrencySymbol() {
+        var fromSelect = document.getElementsByName('from')[0];
+        var toSelect = document.getElementsByName('to')[0];
+
+        var fromSymbol = getCurrencySymbol(fromSelect.value);
+        var toSymbol = getCurrencySymbol(toSelect.value);
+
+        // Stockez le symbole de la devise dans le stockage local
+        localStorage.setItem('fromSymbol', fromSymbol);
+        localStorage.setItem('toSymbol', toSymbol);
+
+        // Mettez à jour le contenu du span avec le symbole de la devise
+        document.getElementById('currencySymbol').innerText = fromSymbol;
+    }
+
+    // Fonction pour obtenir le symbole de la devise
+    function getCurrencySymbol(currencyCode) {
+        // Vous pouvez étendre cette fonction pour inclure d'autres codes de devise
+        if (currencyCode === 'EUR') {
+            return '€';
+        } else if (currencyCode === 'USD') {
+            return '$';
+        }
+
+        // Par défaut, retournez une chaîne vide
+        return '';
+    }
+
+    // Attachez l'événement onchange aux listes déroulantes pour mettre à jour le symbole de la devise
+    document.getElementsByName('from')[0].addEventListener('change', updateCurrencySymbol);
+    document.getElementsByName('to')[0].addEventListener('change', updateCurrencySymbol);
+
+    // Récupérez les symboles de devise du stockage local et définissez-les lors du chargement de la page
+    var fromSymbol = localStorage.getItem('fromSymbol');
+    var toSymbol = localStorage.getItem('toSymbol');
+
+    // Si les symboles de devise ne sont pas dans le stockage local, utilisez les valeurs par défaut basées sur la sélection initiale
+    if (!fromSymbol || !toSymbol) {
+        fromSymbol = getCurrencySymbol(document.getElementsByName('from')[0].value);
+        toSymbol = getCurrencySymbol(document.getElementsByName('to')[0].value);
+        localStorage.setItem('fromSymbol', fromSymbol);
+        localStorage.setItem('toSymbol', toSymbol);
+    }
+
+    // Mettez à jour le contenu du span avec le symbole de la devise
+    document.getElementById('currencySymbol').innerText = fromSymbol;
+</script>

@@ -59,8 +59,9 @@
         </script>
 
 
-      
-       
+     
+
+
         @yield('license')
         @endif
         @else
