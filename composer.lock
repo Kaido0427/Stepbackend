@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "58730e9156f410aea6c4295a1384ad23",
+    "content-hash": "15ad8f5a22f5e283425ba6b13d47434e",
     "packages": [
         {
             "name": "amrshawky/currency",
@@ -10196,7 +10196,9 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {
+        "psy/psysh": 0
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

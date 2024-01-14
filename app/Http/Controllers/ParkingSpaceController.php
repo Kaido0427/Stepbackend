@@ -10,7 +10,8 @@ use App\SpaceZone;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ParkingSpaceController extends Controller
 {
@@ -52,64 +53,106 @@ class ParkingSpaceController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
     public function store(Request $request)
     {
 
         $user = Auth::user();
 
-        // Vérifie si l'utilisateur actuel (le concierge) a déjà un espace
-        if ($user->Spaces->count() > 0) {
-            return response()->json(['msg' => 'The concierge already owns a space. They cannot create another one.', 'success' => false], 400);
-        }
-        $request->validate([
-            'title' => 'required',
-            'address' => 'required',
-            'lat' => 'required',
-            'lng' => 'required',
-            'price_par_hour' => 'required',
-            'available_all_day' => 'required|numeric',
-            'parkingZone' => 'required|array', // Ajout de la validation pour parkingZone
-        ]);
+        Log::channel('custom')->info('Requête reçue pour ajouter un espace', ['user_id' => $user->id]);
 
-        $reqData = $request->all();
-        $reqData['open_time'] = Carbon::parse($request->open_time)->format('H:i:s');
-        $reqData['close_time'] = Carbon::parse($request->close_time)->format('H:i:s');
-        $reqData['owner_id'] = Auth::user()->id;
-        $reqData['status'] = 1;
-        $reqData['verified'] = 1;
-        $data = ParkingSpace::create($reqData);
+        try {
 
-        if (isset($reqData['parkingZone'])) {
-            foreach ($reqData['parkingZone'] as $value) {
-                $zoneData = SpaceZone::create([
-                    'space_id' => $data->id,
-                    'owner_id' => $reqData['owner_id'],
-                    'name' => $value['name']
-                ]);
+            // Vérifie si l'utilisateur actuel (le concierge) a déjà un espace
+            if ($user->Spaces->count() > 0) {
 
-                $slot = [];
-                for ($i = 1; $i <= (int)$value['size']; $i++) {
-                    $slot[] = [
-                        'zone_id' => $zoneData->id,
-                        'space_id' => $data->id,
-                        'name' => $value['name'] . ' ' . $i,
-                        'position' => $i,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ];
-                }
+                Log::channel('custom')->info('Le concierge possède déjà un espace. Il ne peut pas en créer un autre.', ['user_id' => $user->id, 'success' => false]);
 
-                SpaceSlot::insert($slot);
+                return response()->json(['msg' => 'Le concierge possède déjà un espace. Il ne peut pas en créer un autre.', 'success' => false], 400);
             }
-        }
 
-        if (isset($reqData['guardList'])) {
-            ParkingGuard::whereIn('id', $reqData['guardList'])->update([
-                'space_id' => $data->id,
+            Log::channel('custom')->info('Validation des données envoyées', ['user_id' => $user->id]);
+
+            $request->validate([
+                'title' => 'required',
+                'address' => 'required',
+                'lat' => 'required',
+                'lng' => 'required',
+                'price_par_hour' => 'required',
+                'available_all_day' => 'required|numeric',
+                'parkingZone' => 'required|array',
             ]);
-        }
 
-        return response()->json(['msg' => 'Parking Space Added successfully', 'data' => null, 'success' => true], 200);
+            Log::channel('custom')->info('Données validées', ['user_id' => $user->id]);
+
+            $reqData = $request->all();
+
+            Log::channel('custom')->info('Récupération des données envoyées', ['data' => $reqData, 'user_id' => $user->id]);
+
+            $reqData['open_time'] = Carbon::parse($request->open_time)->format('H:i:s');
+            $reqData['close_time'] = Carbon::parse($request->close_time)->format('H:i:s');
+            $reqData['owner_id'] = Auth::user()->id;
+            $reqData['status'] = 1;
+            $reqData['verified'] = 1;
+
+            Log::channel('custom')->info('Préparation des données avant insertion en DB', ['data' => $reqData, 'user_id' => $user->id]);
+
+            DB::beginTransaction();
+
+            $data = ParkingSpace::create($reqData);
+
+            Log::channel('custom')->info('Espace créé', ['data' => $data, 'user_id' => $user->id]);
+
+            if (isset($reqData['parkingZone'])) {
+
+                foreach ($reqData['parkingZone'] as $value) {
+
+                    Log::channel('custom')->info('Création de la zone de parking', ['zone' => $value, 'user_id' => $user->id]);
+
+                    $zoneData = SpaceZone::create([
+                        'space_id' => $data->id,
+                        'owner_id' => $reqData['owner_id'],
+                        'name' => $value['name']
+                    ]);
+
+                    Log::channel('custom')->info('Zone créée', ['zone' => $zoneData, 'user_id' => $user->id]);
+
+                    $slot = [];
+
+                    for ($i = 1; $i <= (int)$value['size']; $i++) {
+
+                        Log::channel('custom')->info('Création de l\'emplacement', ['zone_id' => $zoneData->id, 'user_id' => $user->id]);
+
+                        $slot[] = [
+                            'zone_id' => $zoneData->id,
+                            'space_id' => $data->id,
+                            'name' => $value['name'] . ' ' . $i,
+                            'position' => $i,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                            'is_active' => 1,
+                        ];
+                    }
+
+                    Log::channel('custom')->info('Insertion des emplacements', ['slots' => $slot, 'user_id' => $user->id]);
+
+                    SpaceSlot::insert($slot);
+                }
+            }
+
+            DB::commit();
+
+            Log::channel('custom')->info('Espace de stationnement ajouté avec succès', ['data' => null, 'success' => true, 'user_id' => $user->id]);
+
+            return response()->json(['msg' => 'Espace de stationnement ajouté avec succès', 'data' => null, 'success' => true], 200);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            Log::channel('custom')->error('Erreur lors de l\'ajout des emplacements.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString(), 'user_id' => $user->id]);
+
+            return response()->json(['msg' => 'Erreur lors de l\'ajout des emplacements.', 'error' => $e->getMessage(), 'success' => false], 500);
+        }
     }
 
 
