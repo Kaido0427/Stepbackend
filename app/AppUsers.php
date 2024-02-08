@@ -11,11 +11,11 @@ class AppUsers extends  Authenticatable
 {
     //
     use HasApiTokens, Notifiable;
-    
+
 
 
     protected $fillable = [
-        'name', 'email', 'phone_no', 'OTP', 'email_otp', 'verified', 'email_verified','status', 'image', 'password', 'device_token'
+        'name', 'email', 'phone_no', 'OTP', 'email_otp', 'verified', 'email_verified', 'status', 'image', 'password', 'device_token'
     ];
     protected $table = 'app_users';
     protected $hidden = [
@@ -29,7 +29,7 @@ class AppUsers extends  Authenticatable
             return url('upload/') . '/' . $this->attributes['image'];
         }
     }
-    
+
     public function setPasswordAttribute($value)
     {
         // dd($value);
@@ -43,4 +43,10 @@ class AppUsers extends  Authenticatable
     {
         return $this->hasMany('App\Review', 'user_id', 'id');
     }
+
+    public function Bookings()
+    {
+        return $this->hasMany(ParkingBooking::class,'user_id','id');
+    }
+    
 }

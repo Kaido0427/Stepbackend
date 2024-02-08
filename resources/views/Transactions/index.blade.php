@@ -20,7 +20,7 @@ array(
                             <h3 class="mb-0">{{ __('Transaction') }}</h3>
                         </div>
                         <div class="col-3 text-center">
-                            <a href="" class="btn btn-sm btn-primary">{{__('GrandTotal')}}:- ${{$tempData['grandTotal']}}</a>
+                            <a href="" class="btn btn-sm btn-primary">{{__('GrandTotal')}}:- <span id="currencySymbol"></span>{{$tempData['grandTotal']}}</a>
                         </div>
                     </div>
                 </div>

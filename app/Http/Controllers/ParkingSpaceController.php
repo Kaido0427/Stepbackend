@@ -61,6 +61,7 @@ class ParkingSpaceController extends Controller
 
         Log::channel('custom')->info('Requête reçue pour ajouter un espace', ['user_id' => $user->id]);
 
+
         try {
 
             // Vérifie si l'utilisateur actuel (le concierge) a déjà un espace
@@ -78,7 +79,6 @@ class ParkingSpaceController extends Controller
                 'address' => 'required',
                 'lat' => 'required',
                 'lng' => 'required',
-                'price_par_hour' => 'required',
                 'available_all_day' => 'required|numeric',
                 'parkingZone' => 'required|array',
             ]);
@@ -94,6 +94,10 @@ class ParkingSpaceController extends Controller
             $reqData['owner_id'] = Auth::user()->id;
             $reqData['status'] = 1;
             $reqData['verified'] = 1;
+            $reqData['price_par_hour']=3;
+            $reqData['price_by_day']=5;
+            $reqData['price_by_week']=10;
+            $reqData['price_by_month']=25;
 
             Log::channel('custom')->info('Préparation des données avant insertion en DB', ['data' => $reqData, 'user_id' => $user->id]);
 
@@ -192,7 +196,6 @@ class ParkingSpaceController extends Controller
                 'address' => 'bail|required',
                 'lat' => 'bail|required',
                 'lng' => 'bail|required',
-                'price_par_hour' => 'bail|required',
                 'available_all_day' => 'bail|required|numeric',
                 'open_time' => 'bail|required',
                 'close_time' => 'bail|required',

@@ -15,35 +15,7 @@
             </div> --}}
         </form>
         <!-- User -->
-        <!-- Menu déroulant -->
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="currencyDropdown" role="button" data-toggle="dropdown">
-                    Devise
-                </a>
-                <div class="dropdown-menu">
-                    <!-- Formulaire -->
-                    <form method="POST" action="{{ route('convert') }}">
-                        @csrf
-                        <div class="dropdown-item">
-                            <label>Convertir de</label>
-                            <select name="from" class="form-control">
-                                <option value="EUR">EUR</option>
-                                <option value="USD">USD</option>
-                            </select>
-                        </div>
-                        <div class="dropdown-item">
-                            <label>Convertir vers</label>
-                            <select name="to" class="form-control">
-                                <option value="EUR">EUR</option>
-                                <option value="USD">USD</option>
-                            </select>
-                        </div>
-                        <button type="submit" onclick="convertCurrency('invert')" class="dropdown-item">Convertir</button>
-                    </form>
-                </div>
-            </li>
-        </ul>
+       
         <ul class="navbar-nav align-items-center d-none d-md-flex">
             @php
             $language=App\Language::get();
@@ -119,6 +91,35 @@
                         <i class="ni ni-user-run"></i>
                         <span>{{ __('Déconexion') }}</span>
                     </a>
+                </div>
+            </li>
+        </ul>
+         <!-- devise -->
+         <ul class="navbar-nav mr-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="currencyDropdown" role="button" data-toggle="dropdown">
+                    Devise
+                </a>
+                <div class="dropdown-menu">
+                    <!-- Formulaire -->
+                    <form method="POST" action="{{ route('convert') }}">
+                        @csrf
+                        <div class="dropdown-item">
+                            <label>Convertir de</label>
+                            <select name="from" class="form-control">
+                                <option value="EUR">EUR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+                        <div class="dropdown-item">
+                            <label>Convertir vers</label>
+                            <select name="to" class="form-control">
+                                <option value="EUR">EUR</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+                        <button type="submit" onclick="convertCurrency('invert')" class="dropdown-item">Convertir</button>
+                    </form>
                 </div>
             </li>
         </ul>

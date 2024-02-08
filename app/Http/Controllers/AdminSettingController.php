@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Redirect;
 use LicenseBoxExternalAPI;
 use AshAllenDesign\LaravelExchangeRates\ExchangeRate;
 use Guzzle\Http\Exception\ClientErrorResponseException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log as FacadesLog;
 
 use function Psy\debug;
@@ -558,7 +559,8 @@ class AdminSettingController extends Controller
 
 
         try {
-            $bookings = ParkingBooking::all();
+
+            $bookings = Auth::user()->bookings;
 
             foreach ($bookings as $booking) {
                 $amount = $booking->total_amount;

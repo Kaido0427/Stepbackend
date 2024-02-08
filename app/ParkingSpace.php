@@ -8,7 +8,7 @@ class ParkingSpace extends Model
 { 
     //
     protected $fillable = [
-        'owner_id', 'vehicle_types', 'title', 'description', 'facilities', 'address', 'lat', 'lng', 'price_par_hour', 'phone_number', 'available_all_day', 'offline_payment', 'verified', 'status', 'close_time', 'open_time'
+        'owner_id', 'vehicle_types', 'title', 'description', 'facilities', 'address', 'lat', 'lng', 'price_par_hour', 'phone_number', 'available_all_day', 'offline_payment', 'verified','price_by_day','price_by_week','price_by_month', 'status', 'close_time', 'open_time'
     ];
     protected $table = 'parking_space';
 
