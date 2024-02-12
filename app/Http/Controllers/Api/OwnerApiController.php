@@ -106,7 +106,7 @@ class OwnerApiController extends Controller
     {
         $request->validate([
             'booking_id' => 'bail|required|numeric|exists:parking_booking,id',
-            'status' => 'bail|required|numeric|in:1,2',
+            'status' => 'bail|required|numeric|in:2,3',
         ]);
         ParkingBooking::find($request->booking_id)->update(['status' => $request->status]);
         return response()->json(['msg' => 'Booking Status change successfully.', 'success' => true]);
@@ -177,7 +177,7 @@ class OwnerApiController extends Controller
         // Vérifiez si la réservation existe
         if ($booking) {
             // Mettez à jour le statut de la réservation à 1 (ou à la valeur souhaitée)
-            $booking->update(['status' => 1]);
+            $booking->update(['status' => 3]);
 
             // Renvoyez la réponse JSON avec les données mises à jour
             return response()->json(['msg' => 'Booking successfully completed', 'data' => $booking, 'success' => true], 200);
@@ -211,7 +211,7 @@ class OwnerApiController extends Controller
         return response()->json(['msg' => null, 'data' => $spaceZone, 'success' => true], 200);
     }
 
-   
+
     public function transactionAllInOne($id, $type)
     {
         $date = Carbon::today();
@@ -404,29 +404,27 @@ class OwnerApiController extends Controller
         $header = '';
         $text = '';
         if ($request->status == '1') {
-
-            $header = $data['space']['title'] . ' welcome`s you';
-            $text = 'You are check in for ' . $data['space']['title'] . '   parking space';
+            $header = $data['space']['title'] . ' vous souhaite la bienvenue';
+            $text = 'Vous êtes en attente de validation pour l\'espace de stationnement ' . $data['space']['title'];
         } else if ($request->status == '2') {
-            $header = 'Parking with ' . $data['space']['title'] . ' complete';
-
-            $text = 'Thanks for park with' . $data['space']['title'] . ' please visit again';
-        } else if ($request->status == '2') {
-            $header = 'Important notice by' . $data['space']['title'];
-
-            $text = 'Your parking with' . $data['space']['title'] . ' is cancel please contact us for more info';
-        } else if ($request->payment_status == '1') {
-            $header = 'Payment received';
-
-            $text = 'Payment complete for ' . $data['space']['title'] . ' parking space thanks for payment';
+            $header = 'Stationnement avec ' . $data['space']['title'] . ' terminé';
+            $text = 'Vous avez stationné votre véhicule avec succès à ' . $data['space']['title'] . '.';
+        } else if ($request->status == '3') {
+            $header = 'Stationnement complet avec ' . $data['space']['title'];
+            $text = 'Votre réservation pour l\'espace de stationnement ' . $data['space']['title'] . ' est maintenant terminée.';
+        } else if ($request->status == '4') {
+            $header = 'Annulation de réservation avec ' . $data['space']['title'];
+            $text = 'Votre réservation avec ' . $data['space']['title'] . ' a été annulée. Veuillez nous contacter pour plus d\'informations.';
+        } else if ($request->status == '0') {
+            $header = 'En attente de paiement';
+            $text = 'Votre réservation pour l\'espace de stationnement ' . $data['space']['title'] . ' est en attente de paiement.';
         } else {
             $temp = false;
         }
         try {
             //code...
-
             $userId = $data['user']['device_token'];
-            if (isset($userId) && $temp === true  && $app->notification == 1) {
+            if (isset($userId) && $temp === true && $app->notification == 1) {
                 OneSignalFacade::sendNotificationToUser(
                     $text,
                     $userId,
@@ -435,15 +433,15 @@ class OwnerApiController extends Controller
                     $buttons = null,
                     $schedule = null,
                     $headings = $header
-
                 );
             }
         } catch (\Throwable $th) {
             //throw $th;
         }
 
-        return response()->json(['msg' => 'Thanks', 'data' => $data, 'success' => true], 200);
+        return response()->json(['msg' => 'Merci', 'data' => $data, 'success' => true], 200);
     }
+
     public function profilePictureUpdate(Request $request)
     {
         $name = (new AppHelper)->saveBase64($request->image);

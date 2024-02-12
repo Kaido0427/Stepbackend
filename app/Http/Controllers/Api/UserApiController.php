@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+
+
+
 use App\AdminSetting;
 use App\AppUsers;
 use App\Facilities;
@@ -21,9 +24,13 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Laravel\Passport\Client;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
+use Srmklive\PayPal\Services\ExpressCheckout;
 
 class UserApiController extends Controller
 {
@@ -45,27 +52,26 @@ class UserApiController extends Controller
             'total_amount' => 'bail|required|min:1',
             'payment_type' => 'required', // Make 'payment_type' required
         ]);
-    
+
         $reqData = $request->all();
         $reqData['arriving_time'] = Carbon::parse($reqData['arriving_time'])->format('Y-m-d H:i:s'); // Use $reqData instead of $request
         $reqData['leaving_time'] = Carbon::parse($reqData['leaving_time'])->format('Y-m-d H:i:s'); // Use $reqData instead of $request
         $reqData['user_id'] = Auth::user()->id;
         $reqData['order_no'] = uniqid();
         $reqData['payment_status'] = 1;
-    
-        $slot_state=SpaceSlot::find($reqData['slot_id']);
-        if($slot_state->is_active==0)
-        {
+
+        $slot_state = SpaceSlot::find($reqData['slot_id']);
+        if ($slot_state->is_active == 0) {
             return response()->json(['error' => 'This slot is not available'], 400);
         }
-    
-        
+
+
         if (!isset($reqData['payment_type'])) {
             return response()->json(['error' => 'Payment type not specified.'], 400);
         }
-    
+
         $data = ParkingBooking::create($reqData);
-    
+
         if ($reqData['payment_type'] == 'stripe') {
             $pq = AdminSetting::where('id', 1)->first();
             $reqData['payment_status'] = 1;
@@ -73,7 +79,7 @@ class UserApiController extends Controller
             $pq = AdminSetting::where('id', 1)->first();
             $reqData['payment_status'] = 1;
         }
-    
+
         $spaceData = ParkingSpace::find($reqData['space_id']);
         try {
             $app = AdminSetting::first(); // Use first() to get a single result
@@ -91,7 +97,7 @@ class UserApiController extends Controller
             $user = AppUsers::find($reqData['user_id']);
             $owner = ParkingOwner::where('id', $request->owner_id)->first()->device_token;
             $userId = $user['device_token'];
-    
+
             $ownerheader = 'New user booked Your space';
             $ownermsg = 'Space is ' . $spaceData['title'];
             if (isset($userId) && $app->notification == 1) {
@@ -99,16 +105,16 @@ class UserApiController extends Controller
                     $content1 = [
                         "en" => $message
                     ];
-    
+
                     $fields1 = [
                         'app_id' => $app->app_id,
                         'include_player_ids' => [$userId],
                         'data' => null,
                         'contents' => $content1
                     ];
-    
+
                     $fields1 = json_encode($fields1);
-    
+
                     $ch = curl_init();
                     curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
                     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json; charset=utf-8']);
@@ -117,29 +123,29 @@ class UserApiController extends Controller
                     curl_setopt($ch, CURLOPT_POST, TRUE);
                     curl_setopt($ch, CURLOPT_POSTFIELDS, $fields1);
                     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-    
+
                     $response = curl_exec($ch);
                     curl_close($ch);
                 } catch (\Throwable $th) {
                     // Handle the error
                 }
             }
-    
+
             if (isset($owner) && $app->notification == 1) {
                 try {
                     $content1 = [
                         "en" => $ownermsg
                     ];
-    
+
                     $fields1 = [
                         'app_id' => $app->owner_app_id,
                         'include_player_ids' => [$owner],
                         'data' => null,
                         'contents' => $content1
                     ];
-    
+
                     $fields1 = json_encode($fields1);
-    
+
                     $ch = curl_init();
                     curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
                     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json; charset=utf-8']);
@@ -148,7 +154,7 @@ class UserApiController extends Controller
                     curl_setopt($ch, CURLOPT_POST, TRUE);
                     curl_setopt($ch, CURLOPT_POSTFIELDS, $fields1);
                     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-    
+
                     $response = curl_exec($ch);
                     curl_close($ch);
                 } catch (\Throwable $th) {
@@ -158,22 +164,140 @@ class UserApiController extends Controller
         } catch (\Throwable $th) {
             // Handle the error
         }
-    
+
         $header = "Reminder from " . $spaceData->title; // Use $spaceData->title instead of $spaceData['title']
         $text = 'Your parking with ' . $spaceData->title . ' is scheduled at :- ' . $reqData['arriving_time']; // Use $spaceData->title instead of $spaceData['title']
-    
+
         $data['header'] = $header;
         $data['text'] = $text;
-    
+
         return response()->json(['msg' => 'Thanks', 'data' => $data, 'success' => true], 200);
     }
-    
 
+    public function storeParkingBookin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'owner_id' => 'required|exists:parking_owner,id',
+            'space_id' => 'required|exists:parking_space,id',
+            'slot_id' => 'required|exists:space_slot,id',
+            'vehicle_id' => 'required|exists:user_vehicle,id',
+            'arriving_time' => 'required|date',
+            'leaving_time' => 'required|after:arriving_time',
+            'total_amount' => 'required|numeric|min:1',
+            'payment_type' => 'required|in:paypal', // Make sure only 'paypal' is allowed
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 400);
+        }
+
+        $reqData = $validator->validated();
+
+        $reqData['arriving_time'] = Carbon::parse($reqData['arriving_time'])->format('Y-m-d H:i:s');
+        $reqData['leaving_time'] = Carbon::parse($reqData['leaving_time'])->format('Y-m-d H:i:s');
+        $reqData['user_id'] = Auth::user()->id;
+        $reqData['order_no'] = uniqid();
+        $reqData['status'] = 0; // Payment status set to 0 initially
+
+        $slot_state = SpaceSlot::find($reqData['slot_id']);
+        if (!$slot_state || $slot_state->is_active == 0) {
+            return response()->json(['error' => 'This slot is not available'], 400);
+        }
+
+        try {
+            if ($reqData['payment_type'] == 'paypal') {
+                $provider = new PayPalClient;
+                $provider->setApiCredentials(config('paypal'));
+                $provider->getAccessToken();
+
+                // Create transaction
+                $response = $provider->createOrder([
+                    "intent" => "CAPTURE",
+                    "application_context" => [
+                        "return_url" => "https://127.0.0.1:8000/api/user/successTrans",
+                        "cancel_url" => "https://127.0.0.1:800/api/user/cancelTrans"
+                    ],
+                    "purchase_units" => [
+                        0 => [
+                            "amount" => [
+                                "currency_code" => "EUR",
+                                "value" => $reqData['total_amount']
+                            ]
+                        ]
+                    ]
+                ]);
+                // Log the response for debugging
+                Log::info('PayPal createOrder response:', $response);
+                if (isset($response['id']) && $response['id'] != null) {
+                    // Return approve URL
+                    foreach ($response['links'] as $links) {
+                        if ($links['rel'] == 'approve') {
+                            // Sauvegarde des données de réservation dans la base de données
+                            $booking = ParkingBooking::create($reqData);
+
+                            // Récupération du token de paiement depuis l'URL de redirection PayPal
+                            $paymentUrl = $links['href'];
+                            $paymentUrlParts = parse_url($paymentUrl);
+                            parse_str($paymentUrlParts['query'], $query);
+                            $paymentToken = $query['token'];
+
+                            // Mettre à jour le champ payment_token dans la table parking_bookings
+                            $booking->payment_token = $paymentToken;
+
+                            // Mettre à jour le statut de paiement
+                            $booking->status = 1;
+                            $booking->save();
+
+                            return response()->json([
+                                'redirect_url' => $paymentUrl,
+                                'reservation_data' => $reqData,
+                                'message' => 'Reservation created successfully'
+                            ]);
+                        }
+                    }
+
+                    return response()->json(['error' => 'Something went wrong.'], 500);
+                } else {
+                    return response()->json(['error' => $response['message'] ?? 'Something went wrong.'], 500);
+                }
+            }
+
+            $bookingTime = Carbon::now();
+            $douzeheures = $bookingTime->copy()->addHours(12);
+
+            if (Carbon::now()->greaterThan($douzeheures)) {
+                // Mettre à jour le statut de la réservation à 4
+                DB::table('parking_booking')
+                    ->where('order_no', $reqData['order_no']) // Utilisation de l'ID de la réservation
+                    ->update(['status' => 4]);
+
+                return response()->json([
+                    'message' => 'Votre reservation s\'annule si vous ne payez pas apres 12h de temps ecoulé;veillez reservé dans le temps imparti.Merci !'
+                ], 200);
+            }
+
+            $spaceData = ParkingSpace::find($reqData['space_id']);
+            // Notification logic and other operations
+            // ...
+
+            $header = "Reminder from " . $spaceData->title;
+            $text = 'Your parking with ' . $spaceData->title . ' is scheduled at :- ' . $reqData['arriving_time'];
+
+            $data['header'] = $header;
+            $data['text'] = $text;
+
+            return response()->json([
+                'reservation_data' => $reqData,
+                'message' => 'Reservation created successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
     public function bookingCancel($id)
     {
         $data = ParkingBooking::find($id);
-        $data->status = 3;
+        $data->status = 4;
         $data->save();
         $data = ParkingBooking::with(['user', 'space:id,title,address'])->where([['id', $id]])->get()->first();
         $appuser = AppUsers::find($data->user_id)->name;
@@ -236,7 +360,7 @@ class UserApiController extends Controller
             return response()->json(['msg' => 'An error occurred', 'success' => false], 500);
         }
     }
- 
+
 
     public function showParkingBooking($id)
     {
@@ -268,22 +392,22 @@ class UserApiController extends Controller
         if ($request->hasFile('image')) {
             // Obtenez l'utilisateur connecté
             $user = auth()->user();
-        
+
             // Vérifiez si l'utilisateur existe
             if ($user) {
                 // Obtenez le fichier image téléchargé
                 $image = $request->file('image');
-        
+
                 // Générez un nom de fichier unique
                 $imageName = uniqid() . '.' . $image->getClientOriginalExtension();
-        
+
                 // Déplacez le fichier vers le dossier personnalisé
                 $image->move('upload/', $imageName);
-        
+
                 // Mettez à jour l'image de l'utilisateur avec le nom de fichier uniquement
                 $user->image = $imageName;
                 $user->save();
-        
+
                 return response()->json(['msg' => 'Image de profil mise à jour', 'data' => null, 'success' => true], 200);
             } else {
                 return response()->json(['msg' => 'Utilisateur non trouvé', 'data' => null, 'success' => false], 404);
@@ -292,8 +416,8 @@ class UserApiController extends Controller
             return response()->json(['msg' => 'Aucune image soumise', 'data' => null, 'success' => false], 400);
         }
     }
-    
-    
+
+
     public function deleteAccount()
     {
         $user = auth()->user();
@@ -540,12 +664,12 @@ class UserApiController extends Controller
             $ps = ParkingSpace::with(['reviews.user', 'images'])
                 ->findOrFail($id)
                 ->setAppends(['facilitiesData', 'avg_rating']);
-                if ($ps->reviews) {
-                    $ps->reviews_count = $ps->reviews->count();
-                } else {
-                    // S'il n'y a pas de critiques, définissez reviews_count à null
-                    $ps->reviews_count = null;
-                }
+            if ($ps->reviews) {
+                $ps->reviews_count = $ps->reviews->count();
+            } else {
+                // S'il n'y a pas de critiques, définissez reviews_count à null
+                $ps->reviews_count = null;
+            }
 
             // Calculer la distance
             $distance = (new AppHelper)->calculateDistance($ps->lat, $ps->lng, $request->lat, $request->lng, 'K');
@@ -565,42 +689,39 @@ class UserApiController extends Controller
     }
 
 
-
-
-
     public function getParkingZone(Request $request, $id)
-{
-    $start = Carbon::parse($request->startTime)->format('Y-m-d H:i:s');
-    $end = Carbon::parse($request->endTime)->format('Y-m-d H:i:s');
+    {
+        $start = Carbon::parse($request->startTime)->format('Y-m-d H:i:s');
+        $end = Carbon::parse($request->endTime)->format('Y-m-d H:i:s');
 
-    $ps = SpaceZone::with(['slots' => function ($query) {
-        $query->where('is_active', 1);
-    }])->where('space_id', $id)->get();
- 
-    foreach ($ps as $value) {
-        foreach ($value['slots'] as &$slot) {
-            $booking = ParkingBooking::where('slot_id', $slot['id'])->whereIn('status', [0, 1])->get();
-            if (count($booking) > 0) {
-                foreach ($booking as &$b) {
-                    $a_date = Carbon::parse($b->arriving_time)->format('Y-m-d H:i:s');
-                    $l_date = Carbon::parse($b->leaving_time)->format('Y-m-d H:i:s');
-                    $st = Carbon::parse($start);
-                    $et = Carbon::parse($end);
-                    if ($st->between($a_date, $l_date)) {
-                        $slot['available'] = false;
-                    } else {
-                        $slot['available'] = true;
+        $ps = SpaceZone::with(['slots' => function ($query) {
+            $query->where('is_active', 1);
+        }])->where('space_id', $id)->get();
+
+        foreach ($ps as $value) {
+            foreach ($value['slots'] as &$slot) {
+                $booking = ParkingBooking::where('slot_id', $slot['id'])->whereIn('status', [0, 1])->get();
+                if (count($booking) > 0) {
+                    foreach ($booking as &$b) {
+                        $a_date = Carbon::parse($b->arriving_time)->format('Y-m-d H:i:s');
+                        $l_date = Carbon::parse($b->leaving_time)->format('Y-m-d H:i:s');
+                        $st = Carbon::parse($start);
+                        $et = Carbon::parse($end);
+                        if ($st->between($a_date, $l_date)) {
+                            $slot['available'] = false;
+                        } else {
+                            $slot['available'] = true;
+                        }
                     }
+                } else {
+                    $slot['available'] = true;
                 }
-            } else {
-                $slot['available'] = true;
             }
         }
+        return response()->json(['msg' => null, 'data' => $ps, 'success' => true], 200);
     }
-    return response()->json(['msg' => null, 'data' => $ps, 'success' => true], 200);
-}
 
-    
+
     public function displayFacilities()
     {
         return response()->json(['msg' => null, 'data' => Facilities::all(), 'success' => true], 200);
@@ -640,8 +761,6 @@ class UserApiController extends Controller
      */
     public function cancelTransaction(Request $request)
     {
-        $responseMessage = $request->has('message') ? $request->input('message') : 'You have canceled the transaction.';
-
-        return response()->json(['error' => $responseMessage], 200);
+        return response()->json(['message' => 'Transaction annulé'], 200);
     }
 }

@@ -26,6 +26,7 @@ Route::group(['prefix' => 'owner'], function () {
     Route::group(['middleware' => ['auth:api']], function () {
         Route::resource('space', 'ParkingSpaceController');
         Route::resource('guard', 'ParkingGuardController');
+        Route::post('convert', [currencyConvertController::class, 'owner_Convert']);
         Route::get('profile', function (Request $request) {
             return $request->user();
         });
@@ -53,7 +54,7 @@ Route::group(['prefix' => 'owner'], function () {
         Route::get('subscription_history', [OwnerApiController::class, 'subscriptionHistory']);
         Route::post('purchase_subscription', [OwnerApiController::class, 'purchaseSubscription']);
         // API route pour la conversion de devise
-        Route::post('/convert', [currencyConvertController::class, 'convertAll']);
+       
     });
 
     Route::get('setting', [OwnerApiController::class, 'allSetting']);
@@ -107,7 +108,7 @@ Route::group(['prefix' => 'guard'], function () {
 Route::group(['prefix' => 'user'], function () {
     Route::group(['middleware' => ['auth:userApi']], function () {
         Route::resource('vehicle', 'UserVehicleController');
-        Route::post('booking', [UserApiController::class, 'storeParkingBooking']);
+        Route::post('booking', [UserApiController::class, 'storeParkingBookin']);
         Route::get('booking/cancel/{id}', [UserApiController::class, 'bookingCancel']);
         Route::post('review', [UserApiController::class, 'storeReview']);
         Route::get('booking/{id}', [UserApiController::class, 'showParkingBooking']);
@@ -118,14 +119,16 @@ Route::group(['prefix' => 'user'], function () {
         Route::post('profile/update', [UserApiController::class, 'profileUpdate']);
         Route::post('profile/picture/update', [UserApiController::class, 'profilePictureUpdate']);
 
-        Route::get('success-transaction', [UserApiController::class, 'successTransaction'])->name('successTransaction');
-        Route::get('cancel-transaction', [UserApiController::class, 'cancelTransaction'])->name('cancelTransaction');
+        Route::get('successTrans', [UserApiController::class, 'successTransaction'])->name('successTransaction');
+        Route::get('cancelTrans', [UserApiController::class, 'cancelTransaction'])->name('cancelTransaction');
+        Route::post('convert', [currencyConvertController::class, 'user_Convert']);
     });
     Route::get('setting', [UserApiController::class, 'allSetting']);
     Route::post('forgot', [UserApiController::class, 'forgotPassword']);
     Route::post('store', [UserApiController::class, 'storeUser']);
     Route::post('reqForOTP', [UserApiController::class, 'reqForOTP']);
     Route::post('verifyMe', [UserApiController::class, 'verifyMe']);
+    Route::post('conversion_rate', [currencyConvertController::class, 'getConversionRate']);
 
 
     Route::get('pp', [UserApiController::class, 'ppApi']);
@@ -134,7 +137,7 @@ Route::group(['prefix' => 'user'], function () {
     Route::post('space/{id}/zone', [UserApiController::class, 'getParkingZone']);
     Route::post('login', [UserApiController::class, 'login']);
     // API route pour la conversion de devise
-    Route::post('/convert', [currencyConvertController::class, 'convertAll']);
+   
 
 
     //  // unuse
