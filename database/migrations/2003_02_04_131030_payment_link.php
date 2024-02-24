@@ -13,10 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('app_users', function (Blueprint $table) {
-            $table->string('my_currency')->nullable();
+        Schema::table('parking_booking', function (Blueprint $table) {
+            $table->string('lien_de_transaction')->nullable();
           
-        }); 
+        });
     }
 
     /**
@@ -26,8 +26,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('app_users', function (Blueprint $table) {
-            $table->dropColumn('my_currency');
+        Schema::table('parking_booking', function (Blueprint $table) {
+            $table->dropColumn('lien_de_transaction');
         });
     }
 };

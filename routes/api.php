@@ -48,6 +48,7 @@ Route::group(['prefix' => 'owner'], function () {
         Route::post('guard-space', [OwnerApiController::class, 'guardSpace']);
         Route::get('/owner-setting', [OwnerApiController::class, 'ownerSetting']);
         Route::get('space/{id}', [OwnerApiController::class, 'showParkingSpace']);
+        Route::post('conversion_rate', [currencyConvertController::class, 'getConversionRate']);
 
         // Subscription
         Route::get('subscription', [OwnerApiController::class, 'getSubscription']);

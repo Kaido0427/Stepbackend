@@ -13,6 +13,7 @@
 
 use App\AdminSetting;
 use App\Http\Controllers\AdminSettingController;
+use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AppUsersController;
 use App\Http\Controllers\currencyController;
 use App\Http\Controllers\LanguageController;
@@ -193,3 +194,7 @@ Route::get('/logout', [WebsiteController::class, 'logOut']);
 Route::group(['middleware' => ['auth']], function () {
     Route::put('pp/update', [AdminSettingController::class, 'updatePP'])->name('pp.update');
 });
+
+
+Route::get('successTrans', [UserApiController::class, 'successTransaction'])->name('successTransaction');
+Route::get('cancelTrans', [UserApiController::class, 'cancelTransaction'])->name('cancelTransaction');

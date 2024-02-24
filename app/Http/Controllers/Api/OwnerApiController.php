@@ -169,20 +169,14 @@ class OwnerApiController extends Controller
 
     public function ownerShowScanner($order)
     {
-        // Récupérez la réservation par son identifiant
+
         $booking = ParkingBooking::with(['user', 'vehicle:id,model,vehicle_no'])
             ->where('id', $order)
             ->first();
 
-        // Vérifiez si la réservation existe
         if ($booking) {
-            // Mettez à jour le statut de la réservation à 1 (ou à la valeur souhaitée)
-            $booking->update(['status' => 3]);
-
-            // Renvoyez la réponse JSON avec les données mises à jour
             return response()->json(['msg' => 'Booking successfully completed', 'data' => $booking, 'success' => true], 200);
         } else {
-            // Si la réservation n'est pas trouvée, renvoyez une réponse d'erreur
             return response()->json(['msg' => 'Booking not found', 'success' => false], 404);
         }
     }
@@ -395,7 +389,6 @@ class OwnerApiController extends Controller
     public function updateParkingBooking(Request $request, $id)
     {
         $data = ParkingBooking::find($id);
-        $data->payment_status = $request->payment_status;
         $data->status = $request->status;
         $data->save();
         $app = AdminSetting::get(['id', 'notification'])->first();

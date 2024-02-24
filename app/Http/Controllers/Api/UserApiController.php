@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Passport\Client;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Srmklive\PayPal\Services\ExpressCheckout;
+use App\Http\Controllers\Api\currencyConvertController;
 
 class UserApiController extends Controller
 {
@@ -185,6 +186,7 @@ class UserApiController extends Controller
             'leaving_time' => 'required|after:arriving_time',
             'total_amount' => 'required|numeric|min:1',
             'payment_type' => 'required|in:paypal', // Make sure only 'paypal' is allowed
+            'currency' => 'required|in:EUR,USD',
         ]);
 
         if ($validator->fails()) {
@@ -192,7 +194,7 @@ class UserApiController extends Controller
         }
 
         $reqData = $validator->validated();
-
+        $currency = $reqData['currency'];
         $reqData['arriving_time'] = Carbon::parse($reqData['arriving_time'])->format('Y-m-d H:i:s');
         $reqData['leaving_time'] = Carbon::parse($reqData['leaving_time'])->format('Y-m-d H:i:s');
         $reqData['user_id'] = Auth::user()->id;
@@ -209,23 +211,58 @@ class UserApiController extends Controller
                 $provider = new PayPalClient;
                 $provider->setApiCredentials(config('paypal'));
                 $provider->getAccessToken();
-
                 // Create transaction
-                $response = $provider->createOrder([
-                    "intent" => "CAPTURE",
-                    "application_context" => [
-                        "return_url" => "https://127.0.0.1:8000/api/user/successTrans",
-                        "cancel_url" => "https://127.0.0.1:800/api/user/cancelTrans"
-                    ],
-                    "purchase_units" => [
-                        0 => [
-                            "amount" => [
-                                "currency_code" => "EUR",
-                                "value" => $reqData['total_amount']
+
+                if ($currency == "USD") {
+                    $currencyConverter = new currencyConvertController();
+                    $taux = $currencyConverter->getConversionRate($request);
+
+                    if ($taux->getStatusCode() !== 200) {
+                        // Traitement des erreurs
+                        return $taux; // Retourner directement la réponse d'erreur
+                    }
+
+                    $conversionRateData = json_decode($taux->getContent(), true);
+                    $taux = $conversionRateData['conversionRate'];
+                    if (!isset($reqData['total_amount'])) {
+                        throw new \Exception("Le montant total ('total_amount') est manquant dans les données de réservation.");
+                    }
+
+                    $montant = $reqData['total_amount'];
+                    $montant_USD = round($taux * $montant, 2); // Arrondi à 2 décimales
+                    $response = $provider->createOrder([
+                        "intent" => "CAPTURE",
+                        "application_context" => [
+                            "return_url" => "https://seamoi.com/successTrans",
+                            "cancel_url" => "https://seamoi.com/cancelTrans"
+                        ],
+                        "purchase_units" => [
+                            0 => [
+                                "amount" => [
+                                    "currency_code" => $currency,
+                                    "value" => $montant_USD
+                                ]
                             ]
                         ]
-                    ]
-                ]);
+                    ]);
+                } else {
+                    $response = $provider->createOrder([
+                        "intent" => "CAPTURE",
+                        "application_context" => [
+                            "return_url" => "https://seamoi.com/successTrans",
+                            "cancel_url" => "https://seamoi.com/cancelTrans"
+                        ],
+                        "purchase_units" => [
+                            0 => [
+                                "amount" => [
+                                    "currency_code" => $currency,
+                                    "value" => $reqData['total_amount']
+                                ]
+                            ]
+                        ]
+                    ]);
+                }
+
                 // Log the response for debugging
                 Log::info('PayPal createOrder response:', $response);
                 if (isset($response['id']) && $response['id'] != null) {
@@ -234,45 +271,45 @@ class UserApiController extends Controller
                         if ($links['rel'] == 'approve') {
                             // Sauvegarde des données de réservation dans la base de données
                             $booking = ParkingBooking::create($reqData);
-
                             // Récupération du token de paiement depuis l'URL de redirection PayPal
                             $paymentUrl = $links['href'];
                             $paymentUrlParts = parse_url($paymentUrl);
                             parse_str($paymentUrlParts['query'], $query);
                             $paymentToken = $query['token'];
-
                             // Mettre à jour le champ payment_token dans la table parking_bookings
                             $booking->payment_token = $paymentToken;
 
-                            // Mettre à jour le statut de paiement
-                            $booking->status = 1;
+                            $booking->lien_de_transaction = $paymentUrl;
+                            // Sauvegarder les modifications dans la base de données
                             $booking->save();
+                            // Mettre à jour le statut de paiement
+                            $bookingId = $booking->id;
 
                             return response()->json([
-                                'redirect_url' => $paymentUrl,
-                                'reservation_data' => $reqData,
+                                'Devise' => $currency,
+                                'reservation_data' => $booking,
                                 'message' => 'Reservation created successfully'
                             ]);
                         }
                     }
 
-                    return response()->json(['error' => 'Something went wrong.'], 500);
+                    return response()->json(['error' => 'Un probleme avec la transaction.'], 500);
                 } else {
                     return response()->json(['error' => $response['message'] ?? 'Something went wrong.'], 500);
                 }
             }
 
             $bookingTime = Carbon::now();
-            $douzeheures = $bookingTime->copy()->addHours(12);
+            $delai = $bookingTime->copy()->addHours(1);
 
-            if (Carbon::now()->greaterThan($douzeheures)) {
+            if (Carbon::now()->greaterThan($delai)) {
                 // Mettre à jour le statut de la réservation à 4
                 DB::table('parking_booking')
                     ->where('order_no', $reqData['order_no']) // Utilisation de l'ID de la réservation
                     ->update(['status' => 4]);
 
                 return response()->json([
-                    'message' => 'Votre reservation s\'annule si vous ne payez pas apres 12h de temps ecoulé;veillez reservé dans le temps imparti.Merci !'
+                    'message' => 'Votre reservation s\'annule si vous ne payez pas apres 1h de temps ecoulé;veillez reservé dans le temps imparti.Merci !'
                 ], 200);
             }
 
@@ -370,12 +407,32 @@ class UserApiController extends Controller
     public function displayParkingBooking()
     {
         $data = array();
-        $dataCurrant = ParkingBooking::with(['space:id,title,address'])->where([['user_id', Auth::user()->id]])->whereIn('status', [0, 1])->get();
-        $dataOld = ParkingBooking::with(['space:id,title,address'])->where([['user_id', Auth::user()->id]])->whereIn('status', [2, 3])->get();
-        $data['currant'] = $dataCurrant;
-        $data['old'] = $dataOld;
-        return response()->json(['msg' => 'Thanks', 'data' => $data, 'success' => true], 200);
+
+        // Récupération des réservations en attente de paiement, d'acceptation ou lorsque le vélo est déjà stationné
+        $dataCurrant = ParkingBooking::with(['space:id,title,address'])
+            ->where('user_id', Auth::user()->id)
+            ->whereIn('status', [0, 1, 2])
+            ->get();
+
+        // Récupération des réservations achevées
+        $dataCompleted = ParkingBooking::with(['space:id,title,address'])
+            ->where('user_id', Auth::user()->id)
+            ->where('status', 3)
+            ->get();
+
+        // Récupération des réservations annulées
+        $dataCancelled = ParkingBooking::with(['space:id,title,address'])
+            ->where('user_id', Auth::user()->id)
+            ->where('status', 4)
+            ->get();
+
+        $data['En cours'] = $dataCurrant;
+        $data['complete'] = $dataCompleted;
+        $data['cancelled'] = $dataCancelled;
+
+        return response()->json(['msg' => 'Merci', 'data' => $data, 'success' => true], 200);
     }
+
     public function profileUpdate(Request $request)
     {
         $request->validate([
@@ -748,10 +805,15 @@ class UserApiController extends Controller
         $response = $provider->capturePaymentOrder($request->input('token'));
 
         if (isset($response['status']) && $response['status'] == 'COMPLETED') {
-            return response()->json(['message' => 'Transaction complete.'], 200);
-        } else {
-            $errorMessage = $response['message'] ?? 'Something went wrong.';
-            return response()->json(['error' => $errorMessage], 400);
+
+            $booking = ParkingBooking::where('payment_token', $request->input('token'))->first();
+            if ($booking) {
+                $booking->status = 1;
+                $booking->save();
+                return response()->json(['message' => 'Transaction  effectué avec succes vous pouvez fermer la page :)'], 200);
+            } else {
+                return response()->json(['error' => 'Reservation not found.'], 404);
+            }
         }
     }
     /**
@@ -761,6 +823,6 @@ class UserApiController extends Controller
      */
     public function cancelTransaction(Request $request)
     {
-        return response()->json(['message' => 'Transaction annulé'], 200);
+        return response()->json(['erreur' => 'Transaction annulé,Vous pouvez fermer cette page.'], 404);
     }
 }
