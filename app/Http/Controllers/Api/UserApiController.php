@@ -185,7 +185,7 @@ class UserApiController extends Controller
             'arriving_time' => 'required|date',
             'leaving_time' => 'required|after:arriving_time',
             'total_amount' => 'required|numeric|min:1',
-            'payment_type' => 'required|in:paypal', // Make sure only 'paypal' is allowed
+            'payment_type' => 'required', // Make sure only 'paypal' is allowed
             'currency' => 'required|in:EUR,USD',
         ]);
 
@@ -296,6 +296,63 @@ class UserApiController extends Controller
                     return response()->json(['error' => 'Un probleme avec la transaction.'], 500);
                 } else {
                     return response()->json(['error' => $response['message'] ?? 'Something went wrong.'], 500);
+                }
+            } else {
+                \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+                // Create a Stripe customer
+                $customer = \Stripe\Customer::create([
+                    'email' => Auth::user()->email,
+                ]);
+
+                $amount = $reqData['total_amount'];
+
+                if ($currency == "USD") {
+                    $currencyConverter = new currencyConvertController();
+                    $taux = $currencyConverter->getConversionRate($request);
+
+                    if ($taux->getStatusCode() !== 200) {
+                        // Traitement des erreurs
+                        return $taux; // Retourner directement la réponse d'erreur
+                    }
+
+                    $conversionRateData = json_decode($taux->getContent(), true);
+                    $taux = $conversionRateData['conversionRate'];
+
+                    $amount_USD = round($taux * $amount, 2); // Arrondi à 2 décimales
+                    $amount = $amount_USD;
+                }
+
+                // Create a Stripe payment intent
+                $paymentIntent = \Stripe\PaymentIntent::create([
+                    'amount' => (int) ($amount * 100), // Stripe expects the amount in the smallest currency unit (e.g., cents for USD)
+                    'currency' => $currency,
+                    'customer' => $customer->id,
+                    'description' => 'Reservation pour stationnement ',
+                    'metadata' => ['ordre_no' => $reqData['order_no']],
+                    
+                ]);
+
+
+                if (isset($paymentIntent['id']) && $paymentIntent['id'] != null) {
+                    // Save booking data in the database
+                    $booking = ParkingBooking::create($reqData);
+
+                    // Update the payment_token field in the parking_bookings table
+                    $booking->payment_token = $paymentIntent['id'];
+                    $booking->save();
+
+                    // Update the payment status
+                    $bookingId = $booking->id;
+
+                    return response()->json([
+                        'currency' => $currency,
+                        'reservation_data' => $booking,
+                        'client_secret' => $paymentIntent['client_secret'],
+                        'message' => 'Reservation créee avec succes!'
+                    ]);
+                } else {
+                    return response()->json(['error' => $paymentIntent['message'] ?? 'Something went wrong.'], 500);
                 }
             }
 
