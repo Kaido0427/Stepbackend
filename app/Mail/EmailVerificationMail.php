@@ -15,15 +15,14 @@ class EmailVerificationMail extends Mailable
      *
      * @return void
      */
-    public function __construct($subject,$app_name,$useremail,$otp)
+    public function __construct($subject, $app_name, $useremail, $otp)
     {
-        
         $this->subject = $subject;
         $this->app_name = $app_name;
         $this->useremail = $useremail;
         $this->otp = $otp;
-         
     }
+
 
     /**
      * Get the message envelope.
@@ -60,10 +59,12 @@ class EmailVerificationMail extends Mailable
     // }
     public function build()
     {
-        return $this->from(env('MAIL_FROM_ADDRESS'))->subject('('.$this->app_name.')'.$this->subject)
-        ->view('emailverification')->with([
-            'otp' => $this->otp,
-            'app_name' => $this->app_name
-        ]);
+        return $this->from(env('MAIL_FROM_ADDRESS'))
+            ->subject('(' . $this->app_name . ') ' . $this->subject)
+            ->view('emailverification')
+            ->with([
+                'otp' => $this->otp,
+                'app_name' => $this->app_name
+            ]);
     }
 }

@@ -49,6 +49,7 @@ Route::group(['prefix' => 'owner'], function () {
         Route::get('/owner-setting', [OwnerApiController::class, 'ownerSetting']);
         Route::get('space/{id}', [OwnerApiController::class, 'showParkingSpace']);
         Route::post('conversion_rate', [currencyConvertController::class, 'getConversionRate']);
+        Route::post('reqForOTP', [OwnerApiController::class, 'reqForOTP']);
 
         // Subscription
         Route::get('subscription', [OwnerApiController::class, 'getSubscription']);
@@ -123,6 +124,8 @@ Route::group(['prefix' => 'user'], function () {
         Route::get('successTrans', [UserApiController::class, 'successTransaction'])->name('successTransaction');
         Route::get('cancelTrans', [UserApiController::class, 'cancelTransaction'])->name('cancelTransaction');
         Route::post('convert', [currencyConvertController::class, 'user_Convert']);
+        Route::get('confirmStripay', [UserApiController::class, 'confirmStripay'])->name('StripeTransaction');
+
     });
     Route::get('setting', [UserApiController::class, 'allSetting']);
     Route::post('forgot', [UserApiController::class, 'forgotPassword']);
@@ -140,7 +143,7 @@ Route::group(['prefix' => 'user'], function () {
     // API route pour la conversion de devise
    
 
-
+Route::get('/mail',[UserApiController::class,'mailer']);
     //  // unuse
     // Route::get('facilities', [UserApiController::class,'displayFacilities']);
     // Route::get('vehicleType', [UserApiController::class,'displayVehicleType']);

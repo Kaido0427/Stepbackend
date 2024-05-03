@@ -5,17 +5,36 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
-    $adminSetting = \App\AdminSetting::first();
+        $adminSetting = \App\AdminSetting::first();
     @endphp
-    <link rel="shortcut icon" href="{{  url('upload/'.$adminSetting->favicon)  }}">
+    <link rel="shortcut icon" href="{{ url('upload/' . $adminSetting->favicon) }}">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta name="base_url" content="{{ url('/') }}" />
-    <title>{{ $adminSetting->name }} {{$title ?? ''}}</title>
+    <meta name="description"
+        content="Découvrez STEP, le service de stationnement vélo sécurisé et de parking à vélos en France, Europe et Amérique. Des solutions innovantes pour garer votre vélo en toute sérénité en ville.">
+
+    <meta name="keywords"
+        content="STEP, stationnement vélo, parking vélo, parking à vélos, garer son vélo, sécurité vélo, mobilité urbaine, ville cyclable, France, Europe, Amérique, location vélo, abri vélo, consigne à vélo, box vélo, parc de stationnement, borne vélo, vélostation">
+
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://seamoi.com/">
+    <meta property="og:title"
+        content="STEP - Stationnement Vélo Sécurisé - Parking à Vélos en France, Europe et Amérique">
+    <meta property="og:description"
+        content="Profitez de STEP, notre service de stationnement vélo sécurisé et de nos parkings à vélos en ville, en France, en Europe et en Amérique. Des solutions innovantes pour garer votre vélo en toute tranquillité.">
+    <meta property="og:image" content="https://seamoi.com/public/website/image/logo.png">
+
+    <title>{{ $adminSetting->name }} {{ $title ?? '' }} - STEP - Stationnement Vélo Sécurisé en France, Europe et
+        Amérique</title>
 
     <input type="hidden" name="base_url" value="{{ url('/') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="{{asset('css/app.css')}}" rel="stylesheet">
-    <link href="{{asset('website/css/style.css')}}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
+        integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <link href="{{ asset('website/css/style.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.2/dist/css/splide.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
@@ -53,15 +72,16 @@
     </style>
 
     @if (session('direction') == 'rtl')
-    <link href="{{ asset('argon') }}/css/rtl_direction.css" rel="stylesheet">
+        <link href="{{ asset('argon') }}/css/rtl_direction.css" rel="stylesheet">
     @endif
 </head>
 
 <body class="{{ $class ?? '' }}">
-<div id="loader" class="loader-container flex hidden">
-                <div class="loader"></div>
-            </div>
-    <nav class="bg-white w-full h-16 xxxxl:pt-[0px] xxxxl:pl-[300px] xxxxl:pr-[300px] xxxxl:mt-4 s:pl-[10px] s:pr-[10px] s:pt-[10px] l:pr-[15px] l:pl-[15px] sm:pr-[20px] sm:pl-[20px] lg:pr-[30px] lg:pl-[30px] xxl:pr-[100px] xxl:pl-[100px] xxxl:pr-[150px] xxxl:pl-[150px] shadow-md shadow-[rgba(0, 0, 0, 0.1)]">
+    <div id="loader" class="loader-container flex hidden">
+        <div class="loader"></div>
+    </div>
+    <nav
+        class="bg-white w-full h-16 xxxxl:pt-[0px] xxxxl:pl-[300px] xxxxl:pr-[300px] xxxxl:mt-4 s:pl-[10px] s:pr-[10px] s:pt-[10px] l:pr-[15px] l:pl-[15px] sm:pr-[20px] sm:pl-[20px] lg:pr-[30px] lg:pl-[30px] xxl:pr-[100px] xxl:pl-[100px] xxxl:pr-[150px] xxxl:pl-[150px] shadow-md shadow-[rgba(0, 0, 0, 0.1)]">
         @include('website.layout.header')
     </nav>
     @yield('content')
@@ -72,8 +92,8 @@
 <script src="https://cdn.jsdelivr.net/npm/tw-elements/dist/js/index.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.3/flowbite.min.js"></script>
 <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
-<script src="{{asset('js/app.js')}}"></script>
-<script src="{{asset('website/js/custom.js')}}"></script>
+<script src="{{ asset('js/app.js') }}"></script>
+<script src="{{ asset('website/js/custom.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.2/dist/js/splide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.2/dist/alpine.min.js" defer></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>

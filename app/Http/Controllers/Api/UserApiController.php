@@ -32,6 +32,8 @@ use Laravel\Passport\Client;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Srmklive\PayPal\Services\ExpressCheckout;
 use App\Http\Controllers\Api\currencyConvertController;
+use App\Mail\EmailVerificationMail;
+use Illuminate\Support\Facades\Mail;
 
 class UserApiController extends Controller
 {
@@ -41,141 +43,9 @@ class UserApiController extends Controller
         //
         return response()->json(['msg' => null, 'data' => VehicleType::where('status', 1)->get(), 'success' => true], 200);
     }
+
+
     public function storeParkingBooking(Request $request)
-    {
-        $request->validate([
-            'owner_id' => 'bail|required|exists:parking_owner,id',
-            'space_id' => 'bail|required|exists:parking_space,id',
-            'slot_id' => 'bail|required|exists:space_slot,id',
-            'vehicle_id' => 'bail|required|exists:user_vehicle,id',
-            'arriving_time' => 'bail|required|date',
-            'leaving_time' => 'bail|required|after:arriving_time',
-            'total_amount' => 'bail|required|min:1',
-            'payment_type' => 'required', // Make 'payment_type' required
-        ]);
-
-        $reqData = $request->all();
-        $reqData['arriving_time'] = Carbon::parse($reqData['arriving_time'])->format('Y-m-d H:i:s'); // Use $reqData instead of $request
-        $reqData['leaving_time'] = Carbon::parse($reqData['leaving_time'])->format('Y-m-d H:i:s'); // Use $reqData instead of $request
-        $reqData['user_id'] = Auth::user()->id;
-        $reqData['order_no'] = uniqid();
-        $reqData['payment_status'] = 1;
-
-        $slot_state = SpaceSlot::find($reqData['slot_id']);
-        if ($slot_state->is_active == 0) {
-            return response()->json(['error' => 'This slot is not available'], 400);
-        }
-
-
-        if (!isset($reqData['payment_type'])) {
-            return response()->json(['error' => 'Payment type not specified.'], 400);
-        }
-
-        $data = ParkingBooking::create($reqData);
-
-        if ($reqData['payment_type'] == 'stripe') {
-            $pq = AdminSetting::where('id', 1)->first();
-            $reqData['payment_status'] = 1;
-        } else {
-            $pq = AdminSetting::where('id', 1)->first();
-            $reqData['payment_status'] = 1;
-        }
-
-        $spaceData = ParkingSpace::find($reqData['space_id']);
-        try {
-            $app = AdminSetting::first(); // Use first() to get a single result
-            $notification_template1 = NotificationTemplate::where('title', 'create appointment')->first();
-            $msg_content = $notification_template1->msg_content;
-            $mail_content = $notification_template1->mail_content;
-            $detail1['User_Name'] = auth()->user()->name;
-            $detail1['StartTime'] = $data->arriving_time;
-            $detail1['EndTime'] = $data->leaving_time;
-            $detail1['Payment_Method'] = $data->payment_type;
-            $detail1['App_Name'] = $app->name; // Use $app instead of AdminSetting::first()
-            $content = ["{User_Name}", "{StartTime}", "{EndTime}", "{Payment_Method}", "{App_Name}"];
-            $mail = str_replace($content, $detail1, $mail_content);
-            $message = str_replace($content, $detail1, $msg_content);
-            $user = AppUsers::find($reqData['user_id']);
-            $owner = ParkingOwner::where('id', $request->owner_id)->first()->device_token;
-            $userId = $user['device_token'];
-
-            $ownerheader = 'New user booked Your space';
-            $ownermsg = 'Space is ' . $spaceData['title'];
-            if (isset($userId) && $app->notification == 1) {
-                try {
-                    $content1 = [
-                        "en" => $message
-                    ];
-
-                    $fields1 = [
-                        'app_id' => $app->app_id,
-                        'include_player_ids' => [$userId],
-                        'data' => null,
-                        'contents' => $content1
-                    ];
-
-                    $fields1 = json_encode($fields1);
-
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json; charset=utf-8']);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-                    curl_setopt($ch, CURLOPT_HEADER, FALSE);
-                    curl_setopt($ch, CURLOPT_POST, TRUE);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $fields1);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-
-                    $response = curl_exec($ch);
-                    curl_close($ch);
-                } catch (\Throwable $th) {
-                    // Handle the error
-                }
-            }
-
-            if (isset($owner) && $app->notification == 1) {
-                try {
-                    $content1 = [
-                        "en" => $ownermsg
-                    ];
-
-                    $fields1 = [
-                        'app_id' => $app->owner_app_id,
-                        'include_player_ids' => [$owner],
-                        'data' => null,
-                        'contents' => $content1
-                    ];
-
-                    $fields1 = json_encode($fields1);
-
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json; charset=utf-8']);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-                    curl_setopt($ch, CURLOPT_HEADER, FALSE);
-                    curl_setopt($ch, CURLOPT_POST, TRUE);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $fields1);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-
-                    $response = curl_exec($ch);
-                    curl_close($ch);
-                } catch (\Throwable $th) {
-                    // Handle the error
-                }
-            }
-        } catch (\Throwable $th) {
-            // Handle the error
-        }
-
-        $header = "Reminder from " . $spaceData->title; // Use $spaceData->title instead of $spaceData['title']
-        $text = 'Your parking with ' . $spaceData->title . ' is scheduled at :- ' . $reqData['arriving_time']; // Use $spaceData->title instead of $spaceData['title']
-
-        $data['header'] = $header;
-        $data['text'] = $text;
-
-        return response()->json(['msg' => 'Thanks', 'data' => $data, 'success' => true], 200);
-    }
-
-    public function storeParkingBookin(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'owner_id' => 'required|exists:parking_owner,id',
@@ -185,7 +55,7 @@ class UserApiController extends Controller
             'arriving_time' => 'required|date',
             'leaving_time' => 'required|after:arriving_time',
             'total_amount' => 'required|numeric|min:1',
-            'payment_type' => 'required', // Make sure only 'paypal' is allowed
+            'payment_type' => 'required',
             'currency' => 'required|in:EUR,USD',
         ]);
 
@@ -329,8 +199,9 @@ class UserApiController extends Controller
                     'currency' => $currency,
                     'customer' => $customer->id,
                     'description' => 'Reservation pour stationnement ',
+                    'payment_method' => 'pm_card_mastercard',
                     'metadata' => ['ordre_no' => $reqData['order_no']],
-                    
+
                 ]);
 
 
@@ -340,7 +211,9 @@ class UserApiController extends Controller
 
                     // Update the payment_token field in the parking_bookings table
                     $booking->payment_token = $paymentIntent['id'];
+                    $booking->lien_de_transaction = $paymentIntent['client_secret'];
                     $booking->save();
+
 
                     // Update the payment status
                     $bookingId = $booking->id;
@@ -348,8 +221,8 @@ class UserApiController extends Controller
                     return response()->json([
                         'currency' => $currency,
                         'reservation_data' => $booking,
-                        'client_secret' => $paymentIntent['client_secret'],
-                        'message' => 'Reservation créee avec succes!'
+                        'message' => 'Réservation créée avec succès!'
+
                     ]);
                 } else {
                     return response()->json(['error' => $paymentIntent['message'] ?? 'Something went wrong.'], 500);
@@ -591,13 +464,17 @@ class UserApiController extends Controller
         }
         return response()->json(['msg' => 'No User Found', 'data' => null, 'success' => false], 200);
     }
+
     public function storeUser(Request $request)
     {
         try {
+            $request->merge(['OTP' => null]); // Ajout du champ OTP avec valeur null dans la requête
+
             $request->validate([
                 'email' => 'bail|required|email|unique:app_users,email',
                 'name' => 'bail|required',
                 'password' => 'bail|required|confirmed|min:6',
+                'OTP' => 'nullable|integer|digits:6', // Validation du champ OTP
             ]);
 
             $reqData = $request->all();
@@ -609,8 +486,16 @@ class UserApiController extends Controller
                 $reqData['verified'] = 1;
             }
 
-
             $data = AppUsers::create($reqData);
+
+            $otp = rand(100000, 999999); // Génération d'un code OTP à 6 chiffres aléatoire
+            // Mise à jour de l'OTP dans la base de données
+            $data->OTP = $otp;
+            $data->save();
+
+            $this->sendEmailVerification($data, $otp);
+
+
             $token = $data->createToken('ParingAppUser')->accessToken;
             $data['token'] = $token;
 
@@ -639,42 +524,32 @@ class UserApiController extends Controller
     public function reqForOTP(Request $request)
     {
         $request->validate([
-            'email' => 'bail|required',
-            'phone_no' => 'bail|required',
+            'email' => 'bail|required|email',
+            'otp' => 'required|numeric|digits:6',
         ]);
 
+        // Recherche de l'utilisateur par email ou numéro de téléphone
         $userData = AppUsers::where('email', $request->email)->first();
-
+        $requestOtp = (int) $request->otp;
         if ($userData) {
-            if ($userData['verified'] === 1) {
+            if ($userData->email_verified === 1) {
                 return response()->json(['msg' => 'You are already verified', 'data' => null, 'success' => false, 'redirect' => 'login'], 200);
             } else {
-                $string = '0123456789';
-                $password = substr(str_shuffle($string), 1, 4);
-                $message = $password . ' your verification code.';
+                if ($userData->OTP === $requestOtp) {
+                    $userData->email_verified = 1;
+                    $userData->save();
 
-                try {
-                    $account_sid = env("TWILIO_SID");
-                    $auth_token = env("TWILIO_AUTH_TOKEN");
-                    $twilio_number = env("TWILIO_NUMBER");
-                    $client = new Client($account_sid, $auth_token);
-                    $client->messages->create(
-                        $request->phone_no,
-                        ['from' => $twilio_number, 'body' => $message]
-                    );
-                } catch (\Exception $e) {
-                    return response()->json(['error' => 'Twilio exception: ' . $e->getMessage()], 500);
+                    // Génération et envoi du token d'authentification
+                    $token = $userData->createToken('ParingAppUser')->accessToken;
+                    $userData['token'] = $token;
+
+                    return response()->json(['msg' => 'Thanks For being With us', 'data' => $userData, 'success' => true], 200);
+                } else {
+                    return response()->json(['msg' => 'OTP is incorrect', 'data' => null, 'success' => false], 200);
                 }
-
-                $userData->phone_no = $request->phone_no;
-                $userData->OTP = $password;
-                $userData->verified = 0;
-                $userData->save();
-
-                return response()->json(['msg' => 'Verification code sent to your number', 'data' => null, 'success' => true], 200);
             }
         } else {
-            return response()->json(['msg' => 'We can\'t find you in our system', 'data' => null, 'success' => false, 'redirect' => 'login'], 404);
+            return response()->json(['msg' => 'Email or phone number not found', 'data' => null, 'success' => false, 'redirect' => 'login'], 200);
         }
     }
 
@@ -684,23 +559,25 @@ class UserApiController extends Controller
             'email' => 'bail|required|email',
             'password' => 'bail|required|min:6',
         ]);
+    
         $user = AppUsers::where('email', $request->email)->first();
+    
         if ($user && Hash::check($request->password, $user->password)) {
-            if ($user['verified'] != 1) {
-                return response()->json(['msg' => 'Please Verify your email', 'data' => null, 'success' => false], 200);
+            if ($user->email_verified != 1) {
+                return response()->json(['msg' => 'Veuillez confirmer votre inscription avant de vous connecter.', 'data' => null, 'success' => false], 200);
             }
+    
             $token = $user->createToken('stepOwner')->accessToken;
-
             $user['device_token'] = $request->device_token;
-
             $user->save();
             $user['token'] = $token;
-
-            return response()->json(['msg' => 'lOGIN ', 'data' => $user, 'success' => true], 200);
+    
+            return response()->json(['msg' => 'Connexion réussie', 'data' => $user, 'success' => true], 200);
         } else {
-            return response()->json(['message' => 'Your email and password not match with record'], 401);
+            return response()->json(['message' => 'Votre adresse e-mail et votre mot de passe ne correspondent pas à nos enregistrements'], 401);
         }
     }
+    
 
     public function verifyMe(Request $request)
     {
@@ -881,5 +758,40 @@ class UserApiController extends Controller
     public function cancelTransaction(Request $request)
     {
         return response()->json(['erreur' => 'Transaction annulé,Vous pouvez fermer cette page.'], 404);
+    }
+
+    public function confirmStripay($id)
+    {
+        $data = ParkingBooking::find($id);
+        $data->status = 1;
+        $data->save();
+
+        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET'));
+        $stripe->invoices->create([
+            'customer' => $data->status = 1,
+            'collection_method' => 'send_invoice',
+            'days_until_due' => 30,
+        ]);
+
+        $stripe->invoices->sendInvoice($data->payment_token, ['collection_method' => 'send_invoice']);
+
+
+        $data = ParkingBooking::with(['user', 'vehicle:id,model,vehicle_no', 'space:id,title,address'])->where([['id', $id]])->get()->first();
+
+        return response()->json(['msg' => 'Votre payement par stripe est confirmé avec succes', 'data' => $data, 'success' => true], 200);
+    }
+
+    public function sendEmailVerification($user, $otp)
+    {
+        $subject = 'Email Verification';
+        $app_name = 'STEP'; // Remplacez par le nom de votre application
+
+        Mail::to($user->email)->send(new EmailVerificationMail($subject, $app_name, $user->email, $otp));
+    }
+
+
+    public function mailer()
+    {
+        return view('emailverification');
     }
 }

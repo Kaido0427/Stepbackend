@@ -48,5 +48,7 @@ class AppUsers extends  Authenticatable
     {
         return $this->hasMany(ParkingBooking::class,'user_id','id');
     }
+
+   
     
 }

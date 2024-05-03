@@ -6,6 +6,7 @@ use App\AdminSetting;
 use App\Facilities;
 use App\Http\Controllers\AppHelper;
 use App\Http\Controllers\Controller;
+use App\Mail\EmailVerificationMail;
 use App\Notifications\SendPassword;
 use App\ParkingBooking;
 use App\ParkingGuard;
@@ -26,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Stripe\StripeClient;
 
 class OwnerApiController extends Controller
@@ -463,10 +465,12 @@ class OwnerApiController extends Controller
     public function storeParkingOwner(Request $request)
     {
         try {
+            $request->merge(['OTP' => null]);
             $request->validate([
                 'email' => 'bail|required|email|unique:parking_owner,email',
                 'name' => 'bail|required',
                 'password' => 'bail|required|min:6',
+                'OTP' => 'nullable|integer|digits:6',
             ]);
 
             $data = $request->all();
@@ -474,6 +478,13 @@ class OwnerApiController extends Controller
 
 
             $data = ParkingOwner::create($data);
+            $otp = rand(100000, 999999); // Génération d'un code OTP à 6 chiffres aléatoire
+            // Mise à jour de l'OTP dans la base de données
+            $data->OTP = $otp;
+            $data->save();
+
+            $this->sendEmailVerification($data, $otp);
+
 
             $subscription = Subscription::where('subscription_name', 'Free')->first();
             $admin_setting = AdminSetting::first();
@@ -499,6 +510,38 @@ class OwnerApiController extends Controller
             return response()->json(['msg' => 'Enregistré avec succès.', 'data' => $data, 'success' => true], 200);
         } catch (\Exception $e) {
             return response()->json(['msg' => 'Une erreur s\'est produite lors de l\'enregistrement.', 'error' => $e->getMessage(), 'success' => false], 500);
+        }
+    }
+
+    public function reqForOTP(Request $request)
+    {
+        $request->validate([
+            'email' => 'bail|required|email',
+            'otp' => 'required|numeric|digits:6',
+        ]);
+
+        // Recherche de l'utilisateur par email ou numéro de téléphone
+        $userData = ParkingOwner::where('email', $request->email)->first();
+        $requestOtp = (int) $request->otp;
+        if ($userData) {
+            if ($userData->email_verified === 1) {
+                return response()->json(['msg' => 'You are already verified', 'data' => null, 'success' => false, 'redirect' => 'login'], 200);
+            } else {
+                if ($userData->OTP === $requestOtp) {
+                    $userData->email_verified = 1;
+                    $userData->save();
+
+                    // Génération et envoi du token d'authentification
+                    $token = $userData->createToken('stepOwner')->accessToken;
+                    $userData['token'] = $token;
+
+                    return response()->json(['msg' => 'Thanks For being With us', 'data' => $userData, 'success' => true], 200);
+                } else {
+                    return response()->json(['msg' => 'OTP is incorrect', 'data' => null, 'success' => false], 200);
+                }
+            }
+        } else {
+            return response()->json(['msg' => 'Email or phone number not found', 'data' => null, 'success' => false, 'redirect' => 'login'], 200);
         }
     }
 
@@ -682,5 +725,13 @@ class OwnerApiController extends Controller
         } catch (\Exception $e) {
             return response()->json(['msg' => 'Erreur lors de la récupération des données.', 'success' => false], 500);
         }
+    }
+
+    public function sendEmailVerification($user, $otp)
+    {
+        $subject = 'Email Verification';
+        $app_name = 'STEP'; // Remplacez par le nom de votre application
+
+        Mail::to($user->email)->send(new EmailVerificationMail($subject, $app_name, $user->email, $otp));
     }
 }
